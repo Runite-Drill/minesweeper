@@ -1,0 +1,105 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Cutive Mono', monospace;
+  background-image: url('https://www.azom.com/images/Article_Images/ImageForArticle_16546_1602860295050690.png');
+  margin: 0 auto;
+  text-align: center;
+  
+}
+
+header, footer {
+  text-align: center;
+  margin: 0 auto;
+}
+
+main {
+  /* position: relative; */
+  width: 600px;
+  min-width: 600px;
+  min-height: 600px;
+  border: 4px solid black;
+  /* background-color: lightgrey; */
+  margin: 0 auto;
+  font-size: 8px;
+  display: none;
+}
+
+#gameWindow {
+  min-height: 600px;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  grid-template-areas: "a";
+  /* gap: 5px; */
+}
+
+#gameWindow > div {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.minesweeperGrid {
+  background-color: #cccccc;
+  border: 1px solid #d9d9d9;
+  font-size: 2em;
+  font-weight: bold;
+}
+
+.minesweeperGrid:hover {
+  border: 1px solid lightgoldenrodyellow;
+}
+
+footer {
+  margin-top: 10px;
+}
+
+h2, h3 {
+  text-align: center;
+}
+
+#gameSetup {
+  height: 600px;
+  margin: 0 auto;
+  justify-content: center;
+  align-items: center;
+}
+
+#gameSetup > div {
+  margin: 0 auto;
+  margin-top: 20px;
+  display: flex;
+  flex-direction: center;
+  justify-content: center;
+  align-items: center;
+  /* border: 2px solid red; */
+}
+
+
+input {
+  width: 60%;
+}
+
+p {
+  width: 10%;
+}
+
+.inputDesc {
+  text-align: right;
+  width: 30%;
+}
+
+#startGame {
+  width: 100px;
+  height: 40px;
+  margin: 0 auto;
+  margin-top: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+
