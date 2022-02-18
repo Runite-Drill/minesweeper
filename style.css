@@ -20,16 +20,37 @@ main {
   width: 600px;
   min-width: 600px;
   min-height: 600px;
-  border: 4px solid black;
   /* background-color: lightgrey; */
   margin: 0 auto;
   font-size: 8px;
   display: none;
 }
 
+#gameHeader {
+  height: 50px;
+  display: flex;
+  flex-direction: stretch;
+  /* justify-content: center; */
+  align-items: center;
+  border: 2px solid black;
+  background-color: #cccccc;
+}
+
+#gameHeader > button {
+  height: 40px;
+  width: 60px;
+  margin: 0 5px;
+}
+
+#gameHeader > p {
+  font-size: 2em;
+  width: 30%;
+}
+
 #gameWindow {
   min-height: 600px;
   display: grid;
+  border: 4px solid black;
   grid-template-columns: 1fr;
   grid-template-rows: 1fr;
   grid-template-areas: "a";

@@ -2,13 +2,17 @@ let grid = {};
 let cache = {};
 let game = {};
 
-const debug = false; //set to true to reveal the game board at game start - originally used for debugging the game logic
+const debug = false; //set to true to skip setup, reveal the game board at game start and get logs when clicking the grid - originally used for debugging the game logic and UI
 
 //INITIALISE
 function startupGame() {
+  if (debug) {
+    console.log("!NOTE: Debug mode is active.");
+  }
   cacheUI();
   initialiseGameState();
   initialiseSetup();
+  startGameClock();
 }
 
 function cacheUI() {
@@ -25,6 +29,11 @@ function cacheUI() {
     //Main game window cache (it's built dynamically so nothing else to cache)
     mainWindow: document.querySelector('main'),
     gameWindow: document.getElementById('gameWindow'),
+    clock: document.getElementById('gameClock'),
+    flagBtn: document.getElementById('flagButton'),
+    resetBtn: document.getElementById('resetButton'),
+    questionBtn: document.getElementById('questionButton'),
+    mineCount: document.getElementById('mineCounter'),
   }
   console.log('Loading cache complete');
 }
@@ -41,9 +50,12 @@ function initialiseGameState() {
   game = {
     end: false,
     win: false,
+    flagsPlaced: 0,
     losingIndex: [],
     safeSquaresRevealed: 0,
+    timeStartStamp: 0,
   }
+  cache.gameWindow.innerHTML=''; //Set the game grid UI elements to NOTHING
   console.log('Initialising gamestate complete');
 }
 
@@ -70,9 +82,14 @@ function initialiseSetup() {
 
   checkMineSliderMax(); //set mine slider to match default values
 
+  displaySetupScreen();
   console.log('Displaying setup window');
   //do UI stuff when resetting
 
+
+  if (debug) {
+    initialiseGame();
+  }
 }
 
 function initialiseGame() {
@@ -96,9 +113,7 @@ function initialiseGame() {
 
   console.log('Game setup complete');
 
-  cache.setupWindow.style.display = 'none';
-  cache.mainWindow.style.display = 'block';
-
+  displayGameScreen();
 
   console.log("Displaying game board")
   render(); //first render of gameboard!
@@ -199,13 +214,15 @@ function placeMinesInGrid(gameGrid) {
 
 //GAME LOGIC
 function gameController(idx) {
-  if (!grid.isRevealed[idx[0]][idx[1]]) {
-    checkGrid(idx);
-    checkWin();
+  if ((!grid.isRevealed[idx[0]][idx[1]]) || debug) {
+    //if clicked on unrevealed grid
+    checkGrid(idx); //Check what was revealed on the grid clicked
+    checkWin(); //Check if the player has won
   }
 
-  render(); //Render the game state, then check if special rendering is needed for win/loss
+  render(); //Render the game state to the screen
 
+  //then check if special rendering is needed for win/loss
   if (game.end) {
     if (game.win) {
       //Victory screen
@@ -222,9 +239,14 @@ function checkGrid(idx) {
   grid.isRevealed[idx[0]][idx[1]] = true;
 
   let symb = grid.matrix[idx[0]][idx[1]];
+  if (game.safeSquaresRevealed < 1) {
+    game.timeStartStamp = Date.now();
+  }
       
   if (symb === 'X') {
-    if ((game.safeSquaresRevealed < 1) && (grid.mines < 0.9 * grid.area) && (grid.rearrangeCounter < 10)) {
+    if (debug) {
+      console.log(`You clicked on a mine!`)
+    } else if ((game.safeSquaresRevealed < 1) && (grid.mines < 0.9 * grid.area) && (grid.rearrangeCounter < 10)) {
       //Rearrange grid if struck a mine on the first click and not going overboard with the number of mines in the grid - max ten attempts before just making you lose.
       //i.e. make it so you don't loose on the first click
       console.log(`Rearranging grid so you don't loose on the first click: Attempt ${grid.rearrangeCounter+1}`);
@@ -239,7 +261,9 @@ function checkGrid(idx) {
   } else if (symb === 0) {
     game.safeSquaresRevealed += 1;
     //check adjacent grid for blanks
-    // console.log('Blank');
+    if (debug) {
+      console.log(`You clicked on a blank square`)
+    }
 
     //If the revealed square is blank, reveal the adjacent ones and then check if they are adjacent to any blanks
 
@@ -259,6 +283,9 @@ function checkGrid(idx) {
   } else {
     //You clicked on a nmber tile and nothing special happens
     game.safeSquaresRevealed += 1;
+    if (debug) {
+      console.log(`You clicked on a number: ${symb}`)
+    }
   }
 }
 
@@ -317,24 +344,47 @@ function revealMines() {
 function clickTracker(event) {
   const evEl = event.target;
   if (evEl.id === 'startGame') {
-    if (cache.mineSel.value < cache.rowSel.value * cache.colSel.value) {
-      initialiseGame(); //End setup and start the game
-    } else {
-      console.log("You have too many mines for this grid size!"); //Shouldn't need this but have it here just in case
+    initialiseGame(); //End setup and start the game
+
+  } else if ((evEl.classList.contains('minesweeperGrid') && !game.end) || (evEl.classList.contains('mine'))) {
+
+    if (debug) {
+      console.log(`You clicked grid no: ${evEl.id}`);
     }
 
-  } else if (evEl.classList.contains('minesweeperGrid') && !game.end) {
-    // console.log(`You clicked grid no: ${event.target.id}`);
-
-    idx=(event.target.id.split('-')); //turn element clicked ID into a grid reference
+    idx=(evEl.id.split('-')); //turn element clicked ID into a grid reference
     gameController(idx); //send the grid clicked into the game controller for logic calculations
     
+  } else if (evEl.id == "flagButton") {
+    console.log("Set flags")
+
+  } else if (evEl.id == "resetButton") {
+    //Reset the gamestate
+    initialiseGameState();
+    if (debug) {
+      console.log('Resetting Minesweeper...')
+      initialiseGame(); //if debugging, skip the setup screen and use default parameters
+    } else {
+      initialiseSetup(); //take user back to the setup screen
+    }
+
+  } else if (evEl.id == "questionButton") {
+    console.log("Set ?")
+
   }
 }
 
 //UI
 function render() {
   //display gamestate on screen
+  
+  //Update game header
+  renderGameHeader();
+  //update game grid/board/window
+  renderGameWindow();
+}
+
+function renderGameWindow() {
   for (i in grid.matrix) {
     for (j in grid.matrix[i]) {
       let gridEl = document.getElementById(i+'-'+j);
@@ -346,14 +396,25 @@ function render() {
         if (grid.matrix[i][j] === 0) {
           gridEl.style.fontSize = '0px'; //hide text if it is a zero
         } else if (grid.matrix[i][j] === 'X') {
-          gridEl.innerHTML = `<img src='https://imgur.com/jDSo65w.png' width=90%></img>`; //Put on the bomb image!
+          gridEl.innerHTML = `<img src='assets/bomb.png' width=90% class='mine' id='${i+'-'+j}'></img>`; //Put on the bomb image!
         }
       }
     }
   }
 }
 
-function getTextColor(r,c){
+function renderGameHeader() {
+  //Update game clock
+  if (game.safeSquaresRevealed > 0) {
+    updateGameClock();
+  }
+
+  //Update mine counter
+  let clearedMines = grid.mines - game.flagsPlaced;
+  cache.mineCount.innerText = `Unknown Mines: ${clearedMines}`;
+}
+
+function getTextColor(r,c) {
   let colorStr = '';
   switch (grid.matrix[r][c]) {
     case 0: colorStr='white'; break;
@@ -379,7 +440,7 @@ function renderLoss() {
   let c = game.losingIndex[1];
   let gridEl = document.getElementById(r+'-'+c);
   
-  gridEl.innerHTML = `<img src='https://imgur.com/7NUhadT.png' width=90%></img>`; //Explosion!
+  gridEl.innerHTML = `<img src='assets/explosion.png' width=90%></img>`; //Explosion!
   gridEl.style.backgroundColor = 'rgba(255,200,200,1)'; //highlight losing mine
 
   //Highlight incorrectly marked mines
@@ -394,6 +455,45 @@ function renderWin() {
 
 }
 
+function displaySetupScreen() {
+  //Hides the game screen and displays the setup screen
+  cache.setupWindow.style.display = 'block';
+  cache.mainWindow.style.display = 'none';
+}
 
+function displayGameScreen() {
+  //Hides the game screen and displays the setup screen
+  cache.setupWindow.style.display = 'none';
+  cache.mainWindow.style.display = 'block';
+}
+
+function startGameClock() {
+  //Start the game clock and update the clock UI every second!
+  setInterval(()=>{
+    //every 1s update the game header with the new time
+    renderGameHeader();
+  },1000);
+}
+
+function updateGameClock() {
+  //Update the game clock up to a maximum of 99:59 (mins/secs)
+  let secondsElapsed = Math.floor((Date.now() - game.timeStartStamp)/1000);
+  let mins = Math.floor(secondsElapsed/60);
+  let secs = (secondsElapsed % 60);
+
+  //format time counter
+  if (secondsElapsed > 99*60+59) {
+    mins = 99;
+    secs = 59;
+  } else {
+    if (mins < 10) {
+      mins = '0' + mins;
+    }
+    if (secs < 10) {
+      secs = '0' + secs;
+    }
+  }
+  cache.clock.innerText = `Time: ${mins}:${secs}`;
+}
 
 startupGame(); //Start the setup for the game and lets go!
