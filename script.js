@@ -32,6 +32,26 @@ function cacheUI() {
     questionBtn: document.getElementById('questionButton'),
     mineCount: document.getElementById('mineCounter'),
   }
+
+  //RIGHT CLICK TO SET FLAG or ?
+  cache.gameWindow.addEventListener('contextmenu', function(ev) {
+      ev.preventDefault();
+      idx=(ev.target.id.split('-'));
+      if ((!grid.isRevealed[idx[0]][idx[1]]) || debug) {
+        if (grid.specialIcons[idx[0]][idx[1]] === '') {
+          grid.specialIcons[idx[0]][idx[1]] = 'f';
+          game.flagsPlaced += 1;
+        } else if (grid.specialIcons[idx[0]][idx[1]] === 'f') {
+          grid.specialIcons[idx[0]][idx[1]] = '?';
+          game.flagsPlaced -= 1;
+        } else if (grid.specialIcons[idx[0]][idx[1]] === '?') {
+          grid.specialIcons[idx[0]][idx[1]] = '';
+        }
+        render();
+      }
+      return false;
+    }, false);
+
   console.log('Loading cache complete');
 }
 
